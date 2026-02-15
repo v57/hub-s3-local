@@ -13,7 +13,12 @@ let port = 9000
 
 for (let i = 9000; i < 10000; i += 1) {
   try {
-    await new S3Server({ key: accessKeyId, secret: secretAccessKey, path: 'data', port: i }).start()
+    await new S3Server({
+      key: accessKeyId,
+      secret: secretAccessKey,
+      path: `${Bun.env.HOME}/Hub/Files`,
+      port: i,
+    }).start()
     port = i
     break
   } catch {}
