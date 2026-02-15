@@ -1,0 +1,17 @@
+{
+  "name": "hub-s3",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "channel": "v57/channel",
+    "hub-service": "v57/hub-service",
+    "s3": "v57/s3"
+  }
+}
