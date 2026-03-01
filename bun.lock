@@ -13,7 +13,7 @@
         "@types/bun": "latest",
       },
       "peerDependencies": {
-        "typescript": "^5.8.3",
+        "typescript": "^5.9.3",
       },
     },
   },
@@ -28,7 +28,7 @@
 
     "hub-service": ["hub-service@github:v57/hub-service#adbe9a6", { "dependencies": { "channel": "v57/channel" }, "peerDependencies": { "typescript": "^5.8.3" } }, "v57-hub-service-adbe9a6"],
 
-    "s3": ["s3@github:v57/s3#8119214", { "peerDependencies": { "typescript": "^5" }, "bin": { "s3": "server.ts" } }, "v57-s3-8119214"],
+    "s3": ["s3@github:v57/s3#ae33bfb", { "peerDependencies": { "typescript": "^5" }, "bin": { "s3": "server.ts" } }, "v57-s3-ae33bfb"],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
