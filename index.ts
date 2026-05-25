@@ -4,7 +4,7 @@ import { S3Server } from 's3'
 import { LazyStates, LazyState } from 'channel/more'
 import { randomBytes } from 'crypto'
 
-const hostname = await Bun.$`hostname`.text()
+const hostname = (await Bun.$`hostname`.text()).trim().toLowerCase()
 
 const accessKeyId = randomBytes(32).toString('hex')
 const secretAccessKey = randomBytes(32).toString('hex')
@@ -25,7 +25,7 @@ for (let i = 9000; i < 10000; i += 1) {
     break
   } catch {}
 }
-const client = new S3Client({ accessKeyId, secretAccessKey, endpoint: `http://${hostname.trim()}:${port}`, bucket })
+const client = new S3Client({ accessKeyId, secretAccessKey, endpoint: `http://${hostname}:${port}`, bucket })
 let statuses: Record<string, FileStatus | undefined> = {}
 
 async function list(prefix?: string): Promise<Files> {
