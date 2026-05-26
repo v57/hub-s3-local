@@ -3,8 +3,12 @@ import { S3Client } from 'bun'
 import { S3Server } from 's3'
 import { LazyStates, LazyState } from 'channel/more'
 import { randomBytes } from 'crypto'
+import { hostname, platform } from 'node:os'
 
-const hostname = (await Bun.$`hostname`.text()).trim().toLowerCase()
+export async function name(): Promise<string> {
+  if (platform() !== 'darwin') return hostname()
+  return await Bun.$`scutil --get ComputerName`.text().then(s => s.trim())
+}
 
 const accessKeyId = randomBytes(32).toString('hex')
 const secretAccessKey = randomBytes(32).toString('hex')
@@ -25,7 +29,7 @@ for (let i = 9000; i < 10000; i += 1) {
     break
   } catch {}
 }
-const client = new S3Client({ accessKeyId, secretAccessKey, endpoint: `http://${hostname}:${port}`, bucket })
+const client = new S3Client({ accessKeyId, secretAccessKey, endpoint: `http://${hostname()}:${port}`, bucket })
 let statuses: Record<string, FileStatus | undefined> = {}
 
 async function list(prefix?: string): Promise<Files> {
@@ -66,7 +70,7 @@ interface FileStatus {
 const read: Bun.S3FilePresignOptions = { acl: 'public-read', method: 'GET', expiresIn: 86400 * 7 }
 const readWrite: Bun.S3FilePresignOptions = { acl: 'public-read-write', method: 'PUT', expiresIn: 86400 * 7 }
 
-new Service({ name: 'Files', icon: { symbol: 'folder', text: 'S3' } })
+new Service({ name: await name(), icon: { symbol: 'folder', text: 'S3' } })
   .post('s3/read', (path: string) => client.presign(path, read))
   .post('s3/read/directory', async (path: string) => {
     const list = await client.list({ prefix: path })
