@@ -1,15 +1,11 @@
-# hub-s3
+<h1>
+  <img alt="Containerization logo" src="./icon.png" width="70" valign="middle">
+  &nbsp;hub-s3
+</h1>
 
-To install dependencies:
+Share your local directory with your Hub network
 
-```bash
-bun install
+# Usage
+```sh
+bunx v57/hub-s3-local
 ```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.18. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
