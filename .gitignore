@@ -3,3 +3,5 @@ auth
 node_modules
 .env
 data/
+CLAUDE.md
+/.claude
