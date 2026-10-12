@@ -13,6 +13,7 @@ Share `~/Hub/Files` directory with your Hub network
 const url: string = await service.send('s3/read', 'folder/some.txt')
 const data = await fetch(url)
 ```
+
 ## Upload file
 
 ```ts
@@ -23,26 +24,34 @@ await service.send('s3/updated', 'folder/')
 // You use same url to download it
 const file = await fetch(url)
 ```
+
 ## Get file size
 
 ```ts
 const size: number = await service.send('s3/size', 'folder/some.txt')
 ```
+
 ## Delete file
+
 ```ts
 await service.send('s3/delete', 'folder/some.txt')
 ```
+
 ### Delete folder
+
 ```ts
 await service.send('s3/delete', 'folder/')
 ```
+
 ## Realtime updates
+
 ```ts
 const path: string | undefined
 for (await const files: Files of service.values('s3/list', path)) {
 	
 }
 ```
+
 ## Upload status
 
 ```ts
@@ -52,6 +61,7 @@ await service.send('s3/update/status', { path: 'some.txt', status })
 // Clear status
 await service.send('s3/update/status', { path: 'some.txt' })
 ```
+
 ## Status stream
 
 ```ts
@@ -61,6 +71,7 @@ for (await const statuses of service.values('s3/status')) {
 ```
 
 ## Types
+
 ```ts
 interface Files {
   count: number
@@ -77,3 +88,4 @@ interface FileStatus {
   progress: number
 }
 ```
+
