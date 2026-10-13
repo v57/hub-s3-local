@@ -4,6 +4,7 @@ import { S3Server } from 's3'
 import { LazyStates, LazyState } from 'channel/more'
 import { randomBytes } from 'crypto'
 import { hostname, platform } from 'node:os'
+import { overlayS3Endpoint } from './overlay'
 
 export async function name(): Promise<string> {
   if (platform() !== 'darwin') return hostname()
@@ -29,11 +30,16 @@ for (let i = 9000; i < 10000; i += 1) {
     break
   } catch {}
 }
-const client = new S3Client({ accessKeyId, secretAccessKey, endpoint: `http://${hostname()}:${port}`, bucket })
+const localClient = new S3Client({
+  accessKeyId,
+  secretAccessKey,
+  endpoint: `http://127.0.0.1:${port}`,
+  bucket,
+})
 let statuses: Record<string, FileStatus | undefined> = {}
 
 async function list(prefix?: string): Promise<Files> {
-  const list = await client.list({ prefix, delimiter: '/' })
+  const list = await localClient.list({ prefix, delimiter: '/' })
   const slice = prefix?.length ?? 0
   return {
     count: list.keyCount ?? 0,
@@ -70,33 +76,41 @@ interface FileStatus {
 const read: Bun.S3FilePresignOptions = { acl: 'public-read', method: 'GET', expiresIn: 86400 * 7 }
 const readWrite: Bun.S3FilePresignOptions = { acl: 'public-read-write', method: 'PUT', expiresIn: 86400 * 7 }
 
-new Service({ name: await name(), icon: { symbol: 'folder', text: 'S3' } })
-  .post('s3/read', (path: string) => client.presign(path, read))
+const service = new Service({ name: await name(), icon: { symbol: 'folder', text: 'S3' } })
+const overlayClient = () => new S3Client({
+  accessKeyId,
+  secretAccessKey,
+  endpoint: overlayS3Endpoint(service.getSharePublication('s3')),
+  bucket,
+})
+
+service
+  .post('s3/read', (path: string) => overlayClient().presign(path, read))
   .post('s3/read/directory', async (path: string) => {
-    const list = await client.list({ prefix: path })
+    const list = await localClient.list({ prefix: path })
     return (list.contents ?? []).map(f => ({ name: f.key, lastModified: f.lastModified, size: f.size }) as FileInfo)
   })
-  .post('s3/write', (path: string) => client.presign(path, readWrite))
+  .post('s3/write', (path: string) => overlayClient().presign(path, readWrite))
   .post('s3/delete', async (path: string) => {
     if (path.endsWith('/')) {
-      const files = await client.list({ prefix: path })
+      const files = await localClient.list({ prefix: path })
       if (files.contents) {
         await Promise.all(
           files.contents.map(file =>
-            client.delete(file.key).then(() => filesState.setNeedsUpdate(getParent(file.key))),
+            localClient.delete(file.key).then(() => filesState.setNeedsUpdate(getParent(file.key))),
           ),
         )
         filesState.setNeedsUpdate(getParent(path))
       }
     } else {
-      await client.delete(path)
+      await localClient.delete(path)
       filesState.setNeedsUpdate(getParent(path))
     }
   })
-  .post('s3/size', (path: string) => client.size(path))
+  .post('s3/size', (path: string) => localClient.size(path))
   .post('s3/list', async (prefix?: string) => list(prefix))
   .post('s3/updated', async (path?: string) => filesState.setNeedsUpdate(path ?? ''))
-  .post('s3/update/status', async ({ path, status }) => {
+  .post('s3/update/status', async ({ path, status }: { path: string, status?: FileStatus }) => {
     if (status) {
       statuses[path] = status
     } else {
@@ -106,4 +120,5 @@ new Service({ name: await name(), icon: { symbol: 'folder', text: 'S3' } })
   })
   .stream('s3/list', (body?: string) => filesState.makeIterator(body ?? ''))
   .stream('s3/status', () => statusState.makeIterator())
+  .share('s3', 'tcp', '127.0.0.1', port, { mode: 'hub' })
   .start()

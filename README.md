@@ -7,6 +7,12 @@
 
 Share `~/Hub/Files` directory with your Hub network
 
+The local S3 server selects an available port at startup and publishes that
+exact TCP port to authenticated profiles through Hub Network.
+Read and write requests return presigned URLs using Hub's canonical
+`*.hub.invalid` publication authority and selected port. URL generation fails
+closed until the share has a live Hub Network publication.
+
 ## Download file
 
 ```ts
