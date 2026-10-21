@@ -13,6 +13,17 @@ Read and write requests return presigned URLs using Hub's canonical
 `*.hub.invalid` publication authority and selected port. URL generation fails
 closed until the share has a live Hub Network publication.
 
+## Configuration
+
+| Variable | Default | |
+|---|---|---|
+| `S3_LOCAL_FOLDER` | `~/Hub/Files` | Folder to share |
+| `S3_LOCAL_PORT` | first free port from 9000 | Port of the S3 server (fails if taken) |
+| `S3_LOCAL_ENDPOINT` | none | HTTP(S) origin to presign against instead of the Hub Network share, for development and LANs without the overlay (`http://127.0.0.1:9000`) |
+
+Several instances can run on one machine with their own folder, port, working directory (the service key is
+`./auth`) and `HUB_DEVICE_KEY` (a device each) or `HUB_INSTANCE` (one device).
+
 ## Download file
 
 ```ts

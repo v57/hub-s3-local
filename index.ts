@@ -4,7 +4,7 @@ import { S3Server } from 's3'
 import { LazyStates, LazyState } from 'channel/more'
 import { randomBytes } from 'crypto'
 import { hostname, platform } from 'node:os'
-import { overlayS3Endpoint } from './overlay'
+import { directS3Endpoint, overlayS3Endpoint } from './overlay'
 
 export async function name(): Promise<string> {
   if (platform() !== 'darwin') return hostname()
@@ -14,21 +14,27 @@ export async function name(): Promise<string> {
 const accessKeyId = randomBytes(32).toString('hex')
 const secretAccessKey = randomBytes(32).toString('hex')
 const bucket = 'hub'
-let port = 9000
+// Optional overrides, so several instances can run on one machine (tests, one per disk)
+const folder = process.env.S3_LOCAL_FOLDER || `~/Hub/Files`
+const fixedPort = process.env.S3_LOCAL_PORT ? Number(process.env.S3_LOCAL_PORT) : undefined
+const directEndpoint = directS3Endpoint(process.env.S3_LOCAL_ENDPOINT)
+let port = fixedPort ?? 9000
 
-for (let i = 9000; i < 10000; i += 1) {
+for (let i = port; i < (fixedPort ? fixedPort + 1 : 10000); i += 1) {
   try {
     await new S3Server({
       key: accessKeyId,
       secret: secretAccessKey,
       bucketPaths: {
-        hub: `~/Hub/Files`,
+        hub: folder,
       },
       port: i,
     }).start()
     port = i
     break
-  } catch {}
+  } catch (error) {
+    if (fixedPort) throw error
+  }
 }
 const localClient = new S3Client({
   accessKeyId,
@@ -80,7 +86,7 @@ const service = new Service({ name: await name(), icon: { symbol: 'folder', text
 const overlayClient = () => new S3Client({
   accessKeyId,
   secretAccessKey,
-  endpoint: overlayS3Endpoint(service.getSharePublication('s3')),
+  endpoint: directEndpoint ?? overlayS3Endpoint(service.getSharePublication('s3')),
   bucket,
 })
 

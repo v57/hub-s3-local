@@ -20,3 +20,25 @@ export function overlayS3Endpoint(publication: S3SharePublication | undefined): 
   }
   return `http://${publication.authority}:${publication.port}`
 }
+
+/**
+ * `S3_LOCAL_ENDPOINT`: an HTTP(S) origin to presign against instead of the Hub Network share, for development and
+ * LANs without the overlay. Opt-in; without it URL generation stays fail-closed.
+ */
+export function directS3Endpoint(value: string | undefined): string | undefined {
+  const endpoint = value?.trim()
+  if (!endpoint) return undefined
+  let url: URL
+  try {
+    url = new URL(endpoint)
+  } catch {
+    throw new Error(`Invalid S3_LOCAL_ENDPOINT '${endpoint}'`)
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error(`S3_LOCAL_ENDPOINT uses unsupported protocol '${url.protocol}'`)
+  }
+  if (url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
+    throw new Error('S3_LOCAL_ENDPOINT must be an HTTP(S) origin without credentials, path, query, or fragment')
+  }
+  return url.origin
+}

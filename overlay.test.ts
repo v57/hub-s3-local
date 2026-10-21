@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { S3Client } from 'bun'
-import { overlayS3Endpoint } from './overlay'
+import { directS3Endpoint, overlayS3Endpoint } from './overlay'
 
 describe('overlay S3 endpoint', () => {
   test('uses canonical publication authority and runtime-selected port', () => {
@@ -45,5 +45,24 @@ describe('overlay S3 endpoint', () => {
       protocol: 'tcp',
       port: 0,
     })).toThrow("invalid port '0'")
+  })
+})
+
+describe('direct S3 endpoint', () => {
+  test('is off unless configured', () => {
+    expect(directS3Endpoint(undefined)).toBeUndefined()
+    expect(directS3Endpoint(' ')).toBeUndefined()
+  })
+
+  test('accepts an HTTP(S) origin', () => {
+    expect(directS3Endpoint('http://127.0.0.1:2310')).toBe('http://127.0.0.1:2310')
+    expect(directS3Endpoint('https://nas.local/')).toBe('https://nas.local')
+  })
+
+  test('rejects paths, credentials and other protocols', () => {
+    expect(() => directS3Endpoint('http://127.0.0.1:2310/hub')).toThrow('must be an HTTP(S) origin')
+    expect(() => directS3Endpoint('http://user:pass@127.0.0.1:2310')).toThrow('must be an HTTP(S) origin')
+    expect(() => directS3Endpoint('ftp://127.0.0.1')).toThrow("unsupported protocol 'ftp:'")
+    expect(() => directS3Endpoint('nope')).toThrow('Invalid S3_LOCAL_ENDPOINT')
   })
 })
