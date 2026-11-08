@@ -1,5 +1,6 @@
 import { Service } from 'hub-service'
 import { access } from './access'
+import { descriptions } from './descriptions'
 import { S3Client } from 'bun'
 import { S3Server } from 's3'
 import { LazyStates, LazyState } from 'channel/more'
@@ -92,12 +93,18 @@ const overlayClient = () => new S3Client({
 })
 
 service
-  .post('s3/read', (path: string) => overlayClient().presign(path, read), access['s3/read'])
+  .post('s3/read', (path: string) => overlayClient().presign(path, read), {
+    ...access['s3/read'],
+    ...descriptions.post['s3/read'],
+  })
   .post('s3/read/directory', async (path: string) => {
     const list = await localClient.list({ prefix: path })
     return (list.contents ?? []).map(f => ({ name: f.key, lastModified: f.lastModified, size: f.size }) as FileInfo)
-  }, access['s3/read/directory'])
-  .post('s3/write', (path: string) => overlayClient().presign(path, readWrite), access['s3/write'])
+  }, { ...access['s3/read/directory'], ...descriptions.post['s3/read/directory'] })
+  .post('s3/write', (path: string) => overlayClient().presign(path, readWrite), {
+    ...access['s3/write'],
+    ...descriptions.post['s3/write'],
+  })
   .post('s3/delete', async (path: string) => {
     if (path.endsWith('/')) {
       const files = await localClient.list({ prefix: path })
@@ -113,10 +120,13 @@ service
       await localClient.delete(path)
       filesState.setNeedsUpdate(getParent(path))
     }
-  }, access['s3/delete'])
-  .post('s3/size', (path: string) => localClient.size(path), access['s3/size'])
-  .post('s3/list', async (prefix?: string) => list(prefix), access['s3/list'])
-  .post('s3/updated', async (path?: string) => filesState.setNeedsUpdate(path ?? ''), access['s3/updated'])
+  }, { ...access['s3/delete'], ...descriptions.post['s3/delete'] })
+  .post('s3/size', (path: string) => localClient.size(path), { ...access['s3/size'], ...descriptions.post['s3/size'] })
+  .post('s3/list', async (prefix?: string) => list(prefix), { ...access['s3/list'], ...descriptions.post['s3/list'] })
+  .post('s3/updated', async (path?: string) => filesState.setNeedsUpdate(path ?? ''), {
+    ...access['s3/updated'],
+    ...descriptions.post['s3/updated'],
+  })
   .post('s3/update/status', async ({ path, status }: { path: string, status?: FileStatus }) => {
     if (status) {
       statuses[path] = status
@@ -124,8 +134,14 @@ service
       delete statuses[path]
     }
     statusState.setNeedsUpdate()
-  }, access['s3/update/status'])
-  .stream('s3/list', (body?: string) => filesState.makeIterator(body ?? ''), access['s3/list'])
-  .stream('s3/status', () => statusState.makeIterator(), access['s3/status'])
+  }, { ...access['s3/update/status'], ...descriptions.post['s3/update/status'] })
+  .stream('s3/list', (body?: string) => filesState.makeIterator(body ?? ''), {
+    ...access['s3/list'],
+    ...descriptions.stream['s3/list'],
+  })
+  .stream('s3/status', () => statusState.makeIterator(), {
+    ...access['s3/status'],
+    ...descriptions.stream['s3/status'],
+  })
   .share('s3', 'tcp', '127.0.0.1', port, { mode: 'hub' })
   .start()
