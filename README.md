@@ -180,7 +180,8 @@ bun test
 `overlay.test.ts` covers how links are built from the share's publication (and fail closed without one) and
 `S3_LOCAL_ENDPOINT`'s checks. `access.test.ts` checks every registered path is guarded and that anonymous and
 ungranted callers are refused while owners and granted callers pass (the hub's grant answers are stubbed).
-`descriptions.test.ts` checks every registered path is described with schemas in the subset.
+`descriptions.test.ts` checks every registered path is described with schemas in the subset, and `presign.test.ts`
+that read and write links carry no ACL.
 
 `bun run test:linux-overlay` (`integration/two_agent_overlay.sh`) is a Linux acceptance test: as root, with `ip`,
 `nft`, `wg`, `curl` and `python3`, it puts a caller and a provider in network namespaces joined by real WireGuard

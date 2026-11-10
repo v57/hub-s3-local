@@ -7,6 +7,7 @@ import { LazyStates, LazyState } from 'channel/more'
 import { randomBytes } from 'crypto'
 import { hostname, platform } from 'node:os'
 import { directS3Endpoint, overlayS3Endpoint } from './overlay'
+import { read, write } from './presign'
 
 export async function name(): Promise<string> {
   if (platform() !== 'darwin') return hostname()
@@ -81,8 +82,6 @@ interface FileStatus {
   progress: number
 }
 
-const read: Bun.S3FilePresignOptions = { acl: 'public-read', method: 'GET', expiresIn: 86400 * 7 }
-const readWrite: Bun.S3FilePresignOptions = { acl: 'public-read-write', method: 'PUT', expiresIn: 86400 * 7 }
 
 const service = new Service({ name: await name(), icon: { symbol: 'folder', text: 'S3' } })
 const overlayClient = () => new S3Client({
@@ -101,7 +100,7 @@ service
     const list = await localClient.list({ prefix: path })
     return (list.contents ?? []).map(f => ({ name: f.key, lastModified: f.lastModified, size: f.size }) as FileInfo)
   }, { ...access['s3/read/directory'], ...descriptions.post['s3/read/directory'] })
-  .post('s3/write', (path: string) => overlayClient().presign(path, readWrite), {
+  .post('s3/write', (path: string) => overlayClient().presign(path, write), {
     ...access['s3/write'],
     ...descriptions.post['s3/write'],
   })
